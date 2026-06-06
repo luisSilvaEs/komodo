@@ -1,0 +1,57 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: komodo_db
+    environment:
+      POSTGRES_DB: komodo
+      POSTGRES_USER: komodo_user
+      POSTGRES_PASSWORD: komodo_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U komodo_user -d komodo"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - komodo_network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: komodo_backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/komodo
+      SPRING_DATASOURCE_USERNAME: komodo_user
+      SPRING_DATASOURCE_PASSWORD: komodo_pass
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - komodo_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: komodo_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - komodo_network
+
+networks:
+  komodo_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
