@@ -1,13 +1,14 @@
 services:
+
   postgres:
     image: postgres:17-alpine
     container_name: komodo_db
     environment:
-      POSTGRES_DB: komodo
-      POSTGRES_USER: komodo_user
-      POSTGRES_PASSWORD: komodo_pass
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - "5432:5432"
+      - "5432:5432"             # exposed for IDE / DBeaver access
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -18,17 +19,32 @@ services:
     networks:
       - komodo_network
 
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: komodo_pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD}
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - komodo_network
+
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: komodo_backend
-    ports:
-      - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/komodo
-      SPRING_DATASOURCE_USERNAME: komodo_user
-      SPRING_DATASOURCE_PASSWORD: komodo_pass
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
     depends_on:
@@ -36,15 +52,28 @@ services:
         condition: service_healthy
     networks:
       - komodo_network
+    # No host port — only reachable through nginx
 
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     container_name: komodo_frontend
-    ports:
-      - "80:80"
     depends_on:
+      - backend
+    networks:
+      - komodo_network
+    # No host port — only reachable through nginx
+
+  nginx:
+    image: nginx:alpine
+    container_name: komodo_nginx
+    ports:
+      - "80:80"                 # single entry point for all browser traffic
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
       - backend
     networks:
       - komodo_network
@@ -55,3 +84,4 @@ networks:
 
 volumes:
   postgres_data:
+  pgadmin_data:

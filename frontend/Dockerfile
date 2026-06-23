@@ -1,31 +1,28 @@
-# ─── Stage 1: Build ────────────────────────────────────────────────────────────
-FROM node:24-alpine AS builder
-
-# Enable corepack so pnpm is available without a separate install step
-RUN corepack enable
+# =============================================================================
+# Stage 1 — Build
+# =============================================================================
+FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Copy lockfile and manifest first — same caching strategy as the backend
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+# Copy package files first to leverage Docker layer caching.
+# node_modules are only reinstalled when package.json or lockfile changes.
+COPY package.json package-lock.json ./
+RUN npm ci
 
-# Copy source and build the Vite bundle
+# Copy source and build the static assets
 COPY . .
-RUN pnpm build
+RUN npm run build
 
-# ─── Stage 2: Serve ────────────────────────────────────────────────────────────
+# =============================================================================
+# Stage 2 — Serve
+# =============================================================================
 FROM nginx:alpine AS runtime
 
-# Remove the default Nginx placeholder page
-RUN rm -rf /usr/share/nginx/html/*
-
-# Copy the Vite build output from the builder stage
+# Copy built assets from Stage 1
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copy our custom Nginx config
+# Copy the static file server config (not the reverse proxy one)
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
-
-CMD ["nginx", "-g", "daemon off;"]
