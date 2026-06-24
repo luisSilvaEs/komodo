@@ -1,24 +1,16 @@
-# =============================================================================
-# Stage 1 — Build
-# =============================================================================
-FROM eclipse-temurin:25-jdk-alpine AS builder
+# ─── Stage 1: Build ───────────────────────────────────────────────────────────
+FROM maven:3.9-eclipse-temurin-25 AS builder
 
 WORKDIR /app
 
-# Copy Maven wrapper and pom.xml first to leverage Docker layer caching.
-# Dependencies are only re-downloaded when pom.xml changes.
-COPY .mvn/ .mvn/
-COPY mvnw pom.xml ./
-RUN ./mvnw dependency:go-offline -B
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
 
-# Copy source and build the jar
 COPY src ./src
-RUN ./mvnw package -DskipTests -B
+RUN mvn package -DskipTests -B
 
-# =============================================================================
-# Stage 2 — Run
-# =============================================================================
-FROM eclipse-temurin:25-jdk-alpine AS runtime
+# ─── Stage 2: Runtime ─────────────────────────────────────────────────────────
+FROM eclipse-temurin:25-jre-alpine
 
 WORKDIR /app
 
