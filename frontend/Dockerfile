@@ -5,14 +5,17 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
+# Install pnpm globally
+RUN npm install -g pnpm
+
 # Copy package files first to leverage Docker layer caching.
 # node_modules are only reinstalled when package.json or lockfile changes.
-COPY package.json package-lock.json ./
-RUN npm ci
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 
 # Copy source and build the static assets
 COPY . .
-RUN npm run build
+RUN pnpm run build
 
 # =============================================================================
 # Stage 2 — Serve
