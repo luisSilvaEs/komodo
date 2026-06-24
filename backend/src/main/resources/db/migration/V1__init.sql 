@@ -1,8 +1,0 @@
--- V1__init.sql
--- Initial schema placeholder.
--- Flyway runs migration files in version order (V1, V2, V3...).
--- This file just verifies Flyway is wired up correctly.
--- Product and order tables will be added in V2 and V3.
-
--- Nothing to create yet — tables come in the next migration.
-SELECT 1;
