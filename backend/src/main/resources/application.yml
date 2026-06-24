@@ -3,27 +3,38 @@ spring:
     name: komodo-backend
 
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/komodo}
-    username: ${SPRING_DATASOURCE_USERNAME:komodo_user}
-    password: ${SPRING_DATASOURCE_PASSWORD:komodo_pass}
+    # Injected by Docker Compose from environment variables
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
+    # "validate" means Hibernate checks your entities match the DB schema
+    # but never creates or alters tables — Flyway owns the schema
     hibernate:
       ddl-auto: validate
     show-sql: false
     properties:
       hibernate:
-        format_sql: true
         dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
 
   flyway:
-    enabled: true
+    # Flyway runs migrations from this folder on startup, in version order
     locations: classpath:db/migration
+    baseline-on-migrate: false
 
 server:
   port: 8080
 
 stripe:
+  # Secret key used to create PaymentIntents — never exposed to the frontend
   secret-key: ${STRIPE_SECRET_KEY}
+  # Webhook secret used to verify that events are genuinely from Stripe
   webhook-secret: ${STRIPE_WEBHOOK_SECRET}
+
+logging:
+  level:
+    com.komodo: DEBUG
+    org.flywaydb: INFO
