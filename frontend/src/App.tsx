@@ -2,6 +2,8 @@ import { Routes, Route } from "react-router-dom";
 import CatalogPage from "./features/catalog/CatalogPage";
 import CartIcon from "./features/cart/CartIcon";
 import CartDrawer from "./features/cart/CartDrawer";
+import CheckoutPage from "./features/checkout/CheckoutPage";
+import OrderConfirmationPage from "./features/checkout/OrderConfirmationPage";
 
 const App = () => {
   return (
@@ -19,6 +21,11 @@ const App = () => {
       {/* Page content */}
       <Routes>
         <Route path="/" element={<CatalogPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
+        <Route
+          path="/order/:id/confirmation"
+          element={<OrderConfirmationPage />}
+        />
       </Routes>
 
       {/* Cart drawer — rendered at app level so it overlays any page */}

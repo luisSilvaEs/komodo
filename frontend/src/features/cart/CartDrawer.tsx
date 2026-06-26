@@ -1,5 +1,6 @@
 import { useCartStore } from "./cartStore";
 import { formatMoney } from "../../utils/money";
+import { useNavigate } from "react-router-dom";
 
 const CartDrawer = () => {
   const items = useCartStore((state) => state.items);
@@ -8,6 +9,8 @@ const CartDrawer = () => {
   const closeDrawer = useCartStore((state) => state.closeDrawer);
   const removeItem = useCartStore((state) => state.removeItem);
   const updateQuantity = useCartStore((state) => state.updateQuantity);
+
+  const navigate = useNavigate();
 
   // Infer currency from first item — all products share the same currency in Module 1
   const currency = items[0]?.product.currency ?? "MXN";
@@ -200,7 +203,10 @@ const CartDrawer = () => {
               <button
                 type="button"
                 className="w-full rounded-xl bg-gray-900 py-3 text-sm font-semibold text-white transition-colors hover:bg-gray-700"
-                // onClick will navigate to /checkout in Phase 3
+                onClick={() => {
+                  closeDrawer();
+                  navigate("/checkout");
+                }}
               >
                 Proceed to checkout
               </button>
