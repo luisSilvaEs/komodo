@@ -52,6 +52,7 @@ services:
         condition: service_healthy
     networks:
       - komodo_network
+      - komodo_shared_network   # validates JWTs issued by auth service
     # No host port — only reachable through nginx
 
   frontend:
@@ -77,11 +78,13 @@ services:
       - backend
     networks:
       - komodo_network
+      - komodo_shared_network   # proxies /api/auth/* to auth backends
 
 networks:
   komodo_network:
-    external: true
-    name: komodo_shared_network
+    driver: bridge
+  komodo_shared_network:
+    external: true             # created manually: docker network create komodo_shared_network
 
 volumes:
   postgres_data:
